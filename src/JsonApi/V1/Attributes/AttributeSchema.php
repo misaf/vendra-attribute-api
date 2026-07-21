@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Misaf\VendraAttributeApi\JsonApi\V1\AttributeValues;
+namespace Misaf\VendraAttributeApi\JsonApi\V1\Attributes;
 
 use Illuminate\Database\Eloquent\Builder;
 use LaravelJsonApi\Contracts\Schema\Field;
-use LaravelJsonApi\Contracts\Schema\Filter;
+use LaravelJsonApi\Eloquent\Fields\Boolean;
+use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Number;
 use LaravelJsonApi\Eloquent\Fields\Str;
@@ -15,11 +16,11 @@ use LaravelJsonApi\Eloquent\Filters\WhereIdNotIn;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\QueryBuilder\JsonApiBuilder;
 use LaravelJsonApi\Eloquent\Schema;
-use Misaf\VendraAttribute\Models\AttributeValue;
+use Misaf\VendraAttribute\Models\Attribute;
 
-final class AttributeValueSchema extends Schema
+final class AttributeSchema extends Schema
 {
-    public static string $model = AttributeValue::class;
+    public static string $model = Attribute::class;
 
     /**
      * @var array<string, int>|null
@@ -34,11 +35,21 @@ final class AttributeValueSchema extends Schema
         return [
             ID::make(),
 
-            Number::make('attribute_id'),
+            Str::make('name'),
 
-            Str::make('value'),
+            Str::make('description'),
+
+            Str::make('unit'),
 
             Number::make('position')
+                ->readOnly(),
+
+            Boolean::make('status'),
+
+            DateTime::make('created_at')
+                ->readOnly(),
+
+            DateTime::make('updated_at')
                 ->readOnly(),
         ];
     }
@@ -60,7 +71,7 @@ final class AttributeValueSchema extends Schema
     }
 
     /**
-     * The public read API must never serve values of inactive attributes.
+     * The public read API must never serve inactive attributes.
      *
      * @param  Builder|null  $query
      */
@@ -68,9 +79,6 @@ final class AttributeValueSchema extends Schema
     {
         $query ??= $this->newInstance()->newQuery();
 
-        return parent::newQuery($query->whereHas(
-            'attribute',
-            fn(Builder $query): Builder => $query->where('status', true),
-        ));
+        return parent::newQuery($query->where('status', true));
     }
 }
